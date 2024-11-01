@@ -45,17 +45,32 @@ local function createESPBox(head)
 	return espBox
 end
 
+local function cleanupESP(player)
+	if espBoxes[player] then
+		for _, box in ipairs(espBoxes[player]) do
+			box:Destroy()
+		end
+		espBoxes[player] = nil
+	end
+end
+
 local function onPlayerAdded(player)
 	player.CharacterAdded:Connect(function(character)
 		local humanoid = character:WaitForChild("Humanoid")
 		humanoid.Died:Connect(function()
-			if espBoxes[player] then
-				for _, box in ipairs(espBoxes[player]) do
-					box:Destroy()
-				end
-				espBoxes[player] = nil
-			end
+			-- Clean up ESP if the player dies
+			cleanupESP(player)
 		end)
+
+		-- Check for ESP creation after character is added
+		local head = character:WaitForChild("Head")
+		if player.Team ~= Players.LocalPlayer.Team then
+			local espBox = createESPBox(head)
+			if not espBoxes[player] then
+				espBoxes[player] = {}
+			end
+			table.insert(espBoxes[player], espBox)
+		end
 	end)
 end
 
@@ -71,28 +86,31 @@ RunService.RenderStepped:Connect(function()
 	if _G.Disabled then
 		for _, player in pairs(Players:GetPlayers()) do
 			if player.Name ~= Players.LocalPlayer.Name and player.Team ~= Players.LocalPlayer.Team then
-				pcall(function()
-					if player.Character and player.Character:FindFirstChild("Head") then
-						local head = player.Character.Head
-						if head.Size.X ~= _G.HeadSize then
-							head.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
-							head.Transparency = 0.5
-							head.BrickColor = BrickColor.new("Bright red")
-							head.Material = Enum.Material.Neon
-							head.CanCollide = false
-							head.Massless = true
-						end
+				if player.Character and player.Character:FindFirstChild("Head") then
+					local head = player.Character.Head
 
+					-- Ensure head size and properties are set
+					if head.Size.X ~= _G.HeadSize then
+						head.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
+						head.Transparency = 0.5
+						head.BrickColor = BrickColor.new("Bright red")
+						head.Material = Enum.Material.Neon
+						head.CanCollide = false
+						head.Massless = true
+					end
+
+					-- Create ESP if player is alive and no ESP box exists
+					if player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
 						if not espBoxes[player] then
 							espBoxes[player] = {}
+							local espBox = createESPBox(head)
+							table.insert(espBoxes[player], espBox)
 						end
-						
-						-- Check if the ESP box already exists
-						if #espBoxes[player] == 0 then
-							table.insert(espBoxes[player], createESPBox(head))
-						end
+					else
+						-- Cleanup ESP if player is dead
+						cleanupESP(player)
 					end
-				end)
+				end
 			end
 		end
 	end
