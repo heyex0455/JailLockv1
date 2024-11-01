@@ -1,57 +1,67 @@
--- made by ex0 dont touch or it wont work
-
 _G.HeadSize = 4
 _G.Disabled = true
 
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
-local StarterGui = game:GetService('StarterGui')
 
--- Create a ScreenGui and TextLabel for the fading message
 local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 local screenGui = Instance.new("ScreenGui", playerGui)
-local textLabel = Instance.new("TextLabel", screenGui)
 
-textLabel.Text = "V1 jailLock made by ex0"
-textLabel.Size = UDim2.new(0, 200, 0, 50) -- Adjust size as needed
-textLabel.Position = UDim2.new(0.5, -100, 0.5, -25) -- Center on screen
-textLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
-textLabel.BackgroundTransparency = 0 -- Transparent background
-textLabel.TextScaled = true -- Scales text to fit label
-textLabel.Visible = true
+-- Function to create custom messages
+local function createMessage(text, duration)
+	local textLabel = Instance.new("TextLabel", screenGui)
+	textLabel.Text = text
+	textLabel.Size = UDim2.new(0, 300, 0, 50)
+	textLabel.Position = UDim2.new(0.5, -150, 0.1, 0)
+	textLabel.TextColor3 = Color3.new(1, 1, 1)
+	textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+	textLabel.BackgroundTransparency = 0.5
+	textLabel.TextScaled = true
+	textLabel.Visible = true
 
--- Fade away function
-local function fadeOut()
-	for i = 0, 1, 0.01 do
-		textLabel.TextTransparency = i
-		wait(0.05)
+	-- Fade out function for notifications
+	local function fadeOut()
+		for i = 0, 1, 0.01 do
+			textLabel.TextTransparency = i
+			textLabel.BackgroundTransparency = i
+			wait(0.05)
+		end
+		textLabel:Destroy()
 	end
-	textLabel:Destroy() -- Remove after fading
+
+	wait(duration)
+	fadeOut()
 end
 
--- Start the fade after a short delay
-wait(1) -- Wait for 1 second before starting to fade
-fadeOut()
+createMessage("V1 JailLock made by exo", 3)
 
 RunService.RenderStepped:Connect(function()
 	if _G.Disabled then
 		for _, player in pairs(Players:GetPlayers()) do
-			if player.Name ~= Players.LocalPlayer.Name and player.Team ~= Players.LocalPlayer.Team then
+			if player.Name ~= Players.LocalPlayer.Name then
 				pcall(function()
 					if player.Character and player.Character:FindFirstChild("Head") then
 						local head = player.Character.Head
 						head.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
-						head.Transparency = 0.5
-						head.BrickColor = BrickColor.new("Bright red") -- Change this to your preferred color
-						head.Material = Enum.Material.Neon -- Change this to your preferred material
 						head.CanCollide = false
 						head.Massless = true
 
-						-- Create an ESP Box above the head
+						-- Team-based effects
+						if player.Team then
+							if player.Team.Name == "Prisoners" then
+								head.BrickColor = BrickColor.new("Bright blue") -- Color for prisoners
+								head.Material = Enum.Material.Neon
+							elseif player.Team.Name == "Guards" then
+								head.BrickColor = BrickColor.new("Bright red") -- Color for guards
+								head.Material = Enum.Material.Neon
+							end
+						end
+
+						-- Create ESP Box above the head
 						local espBox = Instance.new("BoxHandleAdornment")
-						espBox.Size = Vector3.new(1, 1, 1) -- Adjust size as needed
+						espBox.Size = Vector3.new(1.5, 1.5, 1.5)
 						espBox.Adornee = head
-						espBox.Color3 = Color3.new(1, 0, 0) -- Red color for the ESP
+						espBox.Color3 = head.BrickColor.Color
 						espBox.AlwaysOnTop = true
 						espBox.ZIndex = 10
 						espBox.Parent = head
